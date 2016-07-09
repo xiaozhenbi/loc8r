@@ -23,11 +23,9 @@ var doAddReview = function (req, res, location) {
         location.save(function (err, location) {
             var thisReview;
             if (err) {
+                console.log(err);
                 sendJsonResponse(res, 400, err);
             } else {
-                // On successful save operation
-                // call function to update
-                // average rating
                 updateAverageRating(location._id);
                 // Retrieve last review added to array and return it as
                 // JSON confirmation response
@@ -238,9 +236,11 @@ module.exports.reviewsDeleteOne = function (req, res) {
                         location.reviews.id(req.params.reviewid).remove();
                         location.save(function (err) {
                             if (err) {
+                                console.log(err);
                                 sendJsonResponse(res, 404, err);
                             } else {
                                 updateAverageRating(location._id);
+                                thisReview = location.reviews[location.reviews.length - 1 ];
                                 sendJsonResponse(res, 204, null);
                             }
                         });

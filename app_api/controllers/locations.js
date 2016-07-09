@@ -3,7 +3,6 @@ var Loc = mongoose.model('Location');
 
 var theEarth = (function () {
     var earthRadius = 6371; // km, miles is 3959 // Define fixed value for radius of Earth
-
     var getDistanceFromRads = function (rads) {
         return parseFloat(rads * earthRadius);
     };
@@ -26,19 +25,20 @@ var sendJsonResponse = function (res, status, content) {
 module.exports.locationsListByDistance = function (req, res) {
     var lng = parseFloat(req.query.lng);
     var lat = parseFloat(req.query.lat);
+    var maxDistance = req.query.maxDistance ? parseFloat(req.query.maxDistance) : 20;
     var point = {
         type: "Point",
         coordinates: [lng, lat]
     };
     var geoOptions = {
         spherical: true,
-        // Create options object, including setting maximum distance to 20km
-        maxDistance: theEarth.getRadsFromDistance(20),
+        maxDistance: maxDistance * 1000, // MongoDB now use GeoJSON to represent coords and maxDistance is in meters
+        //theEarth.getRadsFromDistance(maxDistance), // in radian
         num: 10
     };
     // Check lng and lat query parameters exist in right format; return a 404 error
     // and message if not
-    if (!lng || !lat) {
+    if ((!lng && lng !== 0) || (!lat && lat != 0)) {
         sendJsonResponse(res, 404, {
             "message": "lng and lat query parameters are required"
         });
@@ -50,9 +50,10 @@ module.exports.locationsListByDistance = function (req, res) {
         if (err) {
             sendJsonResponse(res, 404, err);
         } else {
+            console.log(results);
             results.forEach(function (doc) {
                 locations.push({
-                    distance: theEarth.getDistanceFromRads(doc.dis),
+                    distance: doc.dis / 1000,//theEarth.getDistanceFromRads(doc.dis),
                     name: doc.obj.name,
                     address: doc.obj.address,
                     rating: doc.obj.rating,
